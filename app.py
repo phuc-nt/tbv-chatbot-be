@@ -28,7 +28,7 @@ CORS(app)
 
 @app.route('/')
 def home():
-    return "Hello, World!"
+    return "Phúc Đẹp Trai"
 
 def get_embedding(text, model):
     text = str(text).replace("\n", " ")  # Loại bỏ xuống dòng
