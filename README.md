@@ -1,49 +1,49 @@
-# Techbase Vietnam Assistant
+# Trợ lý Techbase Vietnam
 
-This project is a Flask application that serves as an assistant for answering questions about Techbase Vietnam. It uses OpenAI's GPT model and Qdrant for searching similar sentences.
+Dự án này là một ứng dụng Flask phục vụ như một trợ lý để trả lời các câu hỏi về Techbase Vietnam. Nó sử dụng mô hình GPT của OpenAI và Qdrant để tìm kiếm các câu tương tự.
 
-## Installation
+## Cài đặt
 
-First, clone the repository to your local machine:
+Đầu tiên, clone kho lưu trữ về máy cục bộ của bạn:
 
-\```sh
+```sh
 git clone https://github.com/yourusername/your-repo-name.git
-\```
+```
 
-Install the requirements:
+Cài đặt các yêu cầu:
 
-\```sh
+```sh
 pip install -r requirements.txt
-\```
+```
 
-## Usage
+## Sử dụng
 
-To start the server, run:
+Để khởi động máy chủ, chạy:
 
-\```sh
+```sh
 python app.py
-\```
+```
 
-The server will start on `http://0.0.0.0:8080`.
+Máy chủ sẽ khởi động tại `http://0.0.0.0:8080`.
 
-## API Endpoints
+## Điểm cuối API
 
-- `GET /`: Returns the home page.
-- `POST /api/chat`: Takes a JSON payload with a `query` and `context`, and returns a response from the GPT model.
+- `GET /`: Trả về trang chủ.
+- `POST /api/chat`: Nhận một payload JSON với `query` và `context`, và trả về một phản hồi từ mô hình GPT.
 
-## Environment Variables
+## Biến môi trường
 
-The application uses the following environment variables, which are stored in a `.env` file:
+Ứng dụng sử dụng các biến môi trường sau, được lưu trữ trong một file `.env`:
 
-\```properties
+```properties
 OPENAI_API_KEY=your_openai_api_key
 QDRANT_API_KEY=your_qdrant_api_key
-\```
+```
 
-## Contributing
+## Đóng góp
 
-Explain how to contribute to your project.
+Giải thích cách đóng góp vào dự án của bạn.
 
-## License
+## Giấy phép
 
-Include information about the license.
+Bao gồm thông tin về giấy phép.
