@@ -18,7 +18,7 @@ client_qdrant = QdrantClient(
     url="https://5d9b085c-df8b-4f83-81f2-82d006da134a.us-east4-0.gcp.cloud.qdrant.io:6333",
     api_key=qdrant_api_key
 )
-collection_name = 'tbv_facebook_post_text-embedding-3-large'
+collection_name = 'tbv_facebook_post_200_and_homepage'
 
 # Initialize OpenAI client
 client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
