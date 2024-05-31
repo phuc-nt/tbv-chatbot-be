@@ -1,11 +1,10 @@
-from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify, Response
 from flask_cors import CORS
 from dotenv import load_dotenv
 import os
 import openai
 from qdrant_client import QdrantClient
 from qdrant_client.http.models import Distance, VectorParams
-import markdown
 
 # Load environment variables from .env file
 load_dotenv()
@@ -54,44 +53,38 @@ def format_response(query, results):
 
 def ask_gpt(query, context):
     """
-    Hàm này sử dụng GPT để sinh câu trả lời dựa trên prompt bao gồm context và truy vấn.
+    Use GPT to generate a response based on a prompt including context and query.
+    Stream parameter is set to True to handle responses incrementally.
     """
     completion = client.chat.completions.create(
         model="gpt-4o",
         messages=[
             {"role": "system", "content": "Bạn là trợ lý chuyên trả lời các câu hỏi về công ty Techbase Vietnam, khi người dùng hỏi, bạn sẽ trả lời theo thông tin ngữ cảnh sau, và cung cấp các đường link để tham khảo thêm lấy từ ngữ cảnh. Ngữ cảnh: " + context},
             {"role": "user", "content": query}
-        ]
+        ],
+        stream=True  # Enable streaming responses
     )
-    return completion.choices[0].message.content
+    return completion
 
 @app.route('/api/chat', methods=['POST'])
 def chat():
     data = request.get_json()
     messages = data['messages']
 
-    # Prepare messages for OpenAI API
     user_message = messages[-1]['content']
-    openai_messages = [{"role": msg['role'], "content": msg['content']} for msg in messages]
-
-    # Embed the last message using the get_embedding function
     last_message_embedding, _ = get_embedding(user_message, "text-embedding-3-large")
-
-    # Search in Qdrant
     search_result = search_similar_sentences(last_message_embedding)
-
-    # Format the search result for context
     formatted_context = format_response(user_message, search_result)
 
-    # Use OpenAI to generate a response
     bot_response = ask_gpt(user_message, formatted_context)
     
-    # Convert Markdown to HTML
-    html_response = markdown.markdown(bot_response)
-    
-    print(html_response)
+    def generate():
+        for chunk in bot_response:
+            content = chunk.choices[0].delta.content  # This extracts the incremental content from the stream
+            if content is not None:
+                yield content.encode('utf-8')
 
-    return html_response
+    return Response(generate(), mimetype='text/html')
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=8080, debug=True)
