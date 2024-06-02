@@ -9,18 +9,28 @@ from qdrant_client.http.models import Distance, VectorParams
 # Load environment variables from .env file
 load_dotenv()
 
-# Get Qdrant API key from environment
-qdrant_api_key = os.getenv('QDRANT_API_KEY')
+# Define constants
+QDRANT_DOMAIN = "https://5d9b085c-df8b-4f83-81f2-82d006da134a.us-east4-0.gcp.cloud.qdrant.io"
+# QDRANT_DOMAIN = "http://localhost"
+QDRANT_PORT = 6333
+QDRANT_URL = f"{QDRANT_DOMAIN}:{QDRANT_PORT}"
+COLLECTION_NAME = 'tbv_facebook_post_400_and_homepage_200'
+MODEL_NAME = "text-embedding-3-large"
+GPT_MODEL_NAME = "gpt-4o"
+SYSTEM_MESSAGE_FILE = 'messages/system_message.txt'
+
+# Get API keys from environments
+QDRANT_API_KEY = os.getenv('QDRANT_API_KEY')
+OPENAI_API_KEY = os.getenv('OPENAI_API_KEY')
 
 # Initialize Qdrant client
 client_qdrant = QdrantClient(
-    url="https://5d9b085c-df8b-4f83-81f2-82d006da134a.us-east4-0.gcp.cloud.qdrant.io:6333",
-    api_key=qdrant_api_key
+    url=QDRANT_URL,
+    api_key=QDRANT_API_KEY
 )
-collection_name = 'tbv_facebook_post_400_and_homepage_200'
 
 # Initialize OpenAI client
-client = openai.OpenAI(api_key=os.getenv('OPENAI_API_KEY'))
+client_openai = openai.OpenAI(api_key=OPENAI_API_KEY)
 
 app = Flask(__name__)
 CORS(app)
@@ -29,12 +39,12 @@ CORS(app)
 def home():
     return "Phúc Đẹp Trai"
 
-def get_embedding(text, model):
+def get_embedding(text, model=MODEL_NAME):
     text = str(text).replace("\n", " ")  # Loại bỏ xuống dòng
-    response = client.embeddings.create(input=[text], model=model)
+    response = client_openai.embeddings.create(input=[text], model=model)
     return response.data[0].embedding, response.usage.total_tokens
 
-def search_similar_sentences(query_embedding):
+def search_similar_sentences(query_embedding, collection_name=COLLECTION_NAME):
     return client_qdrant.search(
         collection_name=collection_name,
         query_vector=query_embedding,
@@ -51,15 +61,16 @@ def format_response(query, results):
         response += f"\nKết quả {i}: {snippet}\nURL: {post_url}\nĐăng ngày: {posted_on}\nID: {post_id}\n"
     return response
 
-def ask_gpt(query, context):
-    """
-    Use GPT to generate a response based on a prompt including context and query.
-    Stream parameter is set to True to handle responses incrementally.
-    """
-    completion = client.chat.completions.create(
-        model="gpt-4o",
+def get_system_message():
+    with open(SYSTEM_MESSAGE_FILE, 'r') as file:
+        return file.read()
+
+def ask_gpt(query, context, model=GPT_MODEL_NAME):
+    system_message = get_system_message()
+    completion = client_openai.chat.completions.create(
+        model=model,
         messages=[
-            {"role": "system", "content": "Bạn là trợ lý chuyên trả lời các câu hỏi về công ty Techbase Vietnam, khi người dùng hỏi, bạn sẽ trả lời theo thông tin ngữ cảnh sau, và cung cấp các đường link để tham khảo thêm lấy từ ngữ cảnh. Ngữ cảnh: " + context},
+            {"role": "system", "content": system_message + context},
             {"role": "user", "content": query}
         ],
         stream=True  # Enable streaming responses
@@ -72,7 +83,7 @@ def chat():
     messages = data['messages']
 
     user_message = messages[-1]['content']
-    last_message_embedding, _ = get_embedding(user_message, "text-embedding-3-large")
+    last_message_embedding, _ = get_embedding(user_message)
     search_result = search_similar_sentences(last_message_embedding)
     formatted_context = format_response(user_message, search_result)
 
